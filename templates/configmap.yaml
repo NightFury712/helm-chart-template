@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: internal-api-config
+  namespace: {{ .Values.namespace }}
+data:
+{{ (.Files.Glob  (printf "configs/%s/internal-api/*" .Values.environment)).AsConfig | indent 2 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: integration-api-config
+  namespace: {{ .Values.namespace }}
+data:
+{{ (.Files.Glob  (printf "configs/%s/integration-api/*" .Values.environment)).AsConfig | indent 2 }}

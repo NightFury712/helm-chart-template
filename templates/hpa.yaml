@@ -1,0 +1,34 @@
+{{- range $serviceName, $service := .Values.services}}
+{{- with $service.autoscaling }}
+{{- if $service.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $.Values.fullnameOverride }}-{{ $serviceName }}-hpa
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $.Values.fullnameOverride }}-{{ $serviceName }}-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $.Values.fullnameOverride }}-{{ $serviceName }}
+  minReplicas: {{ $service.autoscaling.minReplicas | default $.Values.autoscaling.minReplicas }}
+  maxReplicas: {{ $service.autoscaling.maxReplicas | default $.Values.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $service.autoscaling.targetCPUUtilizationPercentage | default $.Values.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $service.autoscaling.targetMemoryUtilizationPercentage | default $.Values.autoscaling.targetMemoryUtilizationPercentage }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

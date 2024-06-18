@@ -1,0 +1,22 @@
+{{- range $serviceName, $service := .Values.services}}
+{{- if $service.public }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Values.fullnameOverride }}-{{ $serviceName }}-svc
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $.Values.fullnameOverride }}-{{ $serviceName }}-svc
+spec:
+  type: {{ $.Values.service.type }}
+  ports:
+    - port: {{ $.Values.service.port }}
+      targetPort: {{ $service.port | default $.Values.containerPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ $.Values.fullnameOverride }}
+    svcType: {{ $serviceName }}
+---
+{{- end }}
+{{- end }}

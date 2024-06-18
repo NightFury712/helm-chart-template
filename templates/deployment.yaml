@@ -1,0 +1,80 @@
+{{- range $serviceName, $service := .Values.services}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $.Values.fullnameOverride }}-{{ $serviceName }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $.Values.fullnameOverride }}
+    svcType: {{ $serviceName }}
+spec:
+  replicas: {{ $service.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ $.Values.fullnameOverride }}
+      svcType: {{ $serviceName }}
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ $.Values.fullnameOverride }}
+        svcType: {{ $serviceName }}
+        {{- with $service.labels}}
+          {{- toYaml $service.labels | nindent 8}}
+        {{- end}}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ $.Values.fullnameOverride }}-{{ $serviceName }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.image.repository }}/{{ $service.image.name | default (printf "%s-%s" $.Values.fullnameOverride $serviceName) }}:{{ $service.image.tag | default $.Values.image.tag}}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $service.port | default $.Values.containerPort }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml $.Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml $.Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml (default $.Values.resources $service.resources) | nindent 12 }}
+          {{- with $service.env }}
+          env:
+            {{- toYaml $service.env | nindent 12 }}
+          {{- end }}
+          {{- with $service.envFrom }}
+          envFrom:
+            {{- toYaml $service.envFrom | nindent 12 }}
+          {{- end }}
+          {{- with $service.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with $service.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+{{- end }}
